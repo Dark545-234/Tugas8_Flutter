@@ -4,7 +4,7 @@ Penjelasan tiap halaman
 ![Teks alternatif](registrasi.png)
 1. halaman registrasi
    pada bagian ini user dapat melakukan pendaftaran ke dalam sistem dengan cara, memasukkan nama, email, password dan konfirmasi passwork
-![Teks alternatif](notifregistrasi.png)
+![Teks alternatif](notifregis.png)
 - ini adalah notifikasi yang akan muncul ketika registrasi berhasil dilakukan
 
 
