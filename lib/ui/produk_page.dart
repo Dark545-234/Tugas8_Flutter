@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:tokokita/bloc/logout_bloc.dart';
+import 'package:tokokita/bloc/produk_bloc.dart';
 import 'package:tokokita/model/produk.dart';
+import 'package:tokokita/ui/login_page.dart';
 import 'package:tokokita/ui/produk_detail.dart';
 import 'package:tokokita/ui/produk_form.dart';
 
@@ -15,7 +18,7 @@ class _ProdukPageState extends State<ProdukPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('List Produk Diky'),
+        title: const Text('List Produk'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 20.0),
@@ -24,13 +27,11 @@ class _ProdukPageState extends State<ProdukPage> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => ProdukForm(),
-                  ),
+                  MaterialPageRoute(builder: (context) => ProdukForm()),
                 );
               },
             ),
-          ),
+          )
         ],
       ),
 
@@ -40,45 +41,48 @@ class _ProdukPageState extends State<ProdukPage> {
             ListTile(
               title: const Text('Logout'),
               trailing: const Icon(Icons.logout),
-              onTap: () {
-                // TODO: Tambahkan fungsi logout
+              onTap: () async {
+                await LogoutBloc.logout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (route) => false,
+                );
               },
-            ),
+            )
           ],
         ),
       ),
 
-      body: ListView(
-        children: [
-          ItemProduk(
-            produk: Produk(
-              id: "1",
-              kodeProduk: "A001",
-              namaProduk: "Kamera",
-              hargaProduk: 5000000,
-            ),
-          ),
-          ItemProduk(
-            produk: Produk(
-              id: "2",
-              kodeProduk: "A002",
-              namaProduk: "Kulkas",
-              hargaProduk: 2500000,
-            ),
-          ),
-          ItemProduk(
-            produk: Produk(
-              id: "3",
-              kodeProduk: "A003",
-              namaProduk: "Mesin Cuci",
-              hargaProduk: 2000000,
-            ),
-          ),
-        ],
+      body: FutureBuilder<List>(
+        future: ProdukBloc.getProduks(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) print(snapshot.error);
+
+          return snapshot.hasData
+              ? ListProduk(list: snapshot.data)
+              : const Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }
 }
+
+class ListProduk extends StatelessWidget {
+  final List? list;
+
+  const ListProduk({Key? key, this.list}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: list?.length ?? 0,
+      itemBuilder: (context, i) {
+        return ItemProduk(produk: list![i]);
+      },
+    );
+  }
+}
+
 class ItemProduk extends StatelessWidget {
   final Produk produk;
 
@@ -97,8 +101,8 @@ class ItemProduk extends StatelessWidget {
       },
       child: Card(
         child: ListTile(
-          title: Text(produk.namaProduk ?? '-'),
-          subtitle: Text("Rp ${produk.hargaProduk.toString()}"),
+          title: Text(produk.namaProduk ?? ''),
+          subtitle: Text(produk.hargaProduk.toString()),
         ),
       ),
     );

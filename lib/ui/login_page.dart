@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:tokokita/bloc/login_bloc.dart';
+import 'package:tokokita/helpers/user_info.dart';
+import 'package:tokokita/ui/produk_page.dart';
 import 'package:tokokita/ui/registrasi_page.dart';
+import 'package:tokokita/widget/warning_dialog.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -12,57 +16,53 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  final _emailTextboxController = TextEditingController();
-  final _passwordTextboxController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: const Text('Login')),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                _emailTextField(),
-                _passwordTextField(),
-                const SizedBox(height: 20),
-                _buttonLogin(),
-                const SizedBox(height: 30),
-                _menuRegistrasi(),
-              ],
-            ),
+        padding: const EdgeInsets.all(12),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _emailTextField(),
+              _passwordTextField(),
+              const SizedBox(height: 20),
+              _buttonLogin(),
+              const SizedBox(height: 30),
+              _menuRegistrasi(),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // TextField Email
+  /// TextField Email
   Widget _emailTextField() {
     return TextFormField(
-      decoration: const InputDecoration(labelText: "Email"),
+      controller: _emailController,
       keyboardType: TextInputType.emailAddress,
-      controller: _emailTextboxController,
+      decoration: const InputDecoration(labelText: "Email"),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Email harus diisi';
+          return "Email harus diisi";
         }
         return null;
       },
     );
   }
 
-  // TextField Password
+  /// TextField Password
   Widget _passwordTextField() {
     return TextFormField(
-      decoration: const InputDecoration(labelText: "Password"),
+      controller: _passwordController,
       obscureText: true,
-      controller: _passwordTextboxController,
+      decoration: const InputDecoration(labelText: "Password"),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return "Password harus diisi";
@@ -72,44 +72,67 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Tombol Login
+  /// Tombol Login
   Widget _buttonLogin() {
     return ElevatedButton(
-      onPressed: _isLoading
-          ? null
-          : () {
-              if (_formKey.currentState!.validate()) {
-                setState(() {
-                  _isLoading = true;
-                });
-
-                // TODO: panggil API login di sini
-                
-                // Setelah proses selesai:
-                setState(() {
-                  _isLoading = false;
-                });
-              }
-            },
+      onPressed: () {
+        final valid = _formKey.currentState!.validate();
+        if (valid && !_isLoading) {
+          _submit();
+        }
+      },
       child: _isLoading
           ? const CircularProgressIndicator(color: Colors.white)
           : const Text("Login"),
     );
   }
 
-  // Menu Registrasi
+  /// Submit login ke API
+  void _submit() {
+    setState(() => _isLoading = true);
+
+    LoginBloc.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    ).then((value) async {
+      if (value.code == 200) {
+        await UserInfo().setToken(value.token.toString());
+        await UserInfo().setUserID(value.userID!);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProdukPage()),
+        );
+      } else {
+        _showError("Login gagal, silahkan coba lagi");
+      }
+    }).catchError((error) {
+      _showError("Login gagal, silahkan coba lagi");
+    }).whenComplete(() {
+      setState(() => _isLoading = false);
+    });
+  }
+
+  /// Menampilkan dialog error
+  void _showError(String pesan) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => WarningDialog(description: pesan),
+    );
+  }
+
+  /// Menu ke halaman Registrasi
   Widget _menuRegistrasi() {
     return InkWell(
       child: const Text(
         "Registrasi",
-        style: TextStyle(color: Colors.blue),
+        style: TextStyle(color: Colors.blue, fontSize: 16),
       ),
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const RegistrasiPage(),
-          ),
+          MaterialPageRoute(builder: (_) => const RegistrasiPage()),
         );
       },
     );
